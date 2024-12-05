@@ -1,5 +1,12 @@
+from random import shuffle
+
+import pandas as pd
+import torch
+
+from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
+from src.transforms.mel_spect import MelSpectrogramConfig
 
 
 class Trainer(BaseTrainer):
@@ -32,25 +39,43 @@ class Trainer(BaseTrainer):
         metric_funcs = self.metrics["inference"]
         if self.is_train:
             metric_funcs = self.metrics["train"]
-            self.optimizer.zero_grad()
+            for opt in self.optimizer:
+                self.optimizer[opt].zero_grad()
 
-        outputs = self.model(**batch)
+        outputs = self.model(is_gen=False, **batch)
         batch.update(outputs)
 
-        all_losses = self.criterion(**batch)
+        all_losses = self.criterion(is_gen=False, **batch)
         batch.update(all_losses)
 
         if self.is_train:
-            batch["loss"].backward()  # sum of all losses is always called loss
+            torch.autograd.set_detect_anomaly(True)
+            batch["loss_disc"].backward()
             self._clip_grad_norm()
-            self.optimizer.step()
+            self.optimizer["disc"].step()
+
+        outputs = self.model(is_gen=True, **batch)
+        batch.update(outputs)
+
+        all_losses = self.criterion(is_gen=True, **batch)
+        batch.update(all_losses)
+
+        if self.is_train:
+            # torch.autograd.set_detect_anomaly(True)
+            self.optimizer[
+                "gen"
+            ].zero_grad()  # на всяйкий случай так как после disc в нем уже лежит лишний для нас градиент
+            batch["loss_gener"].backward()
+            self._clip_grad_norm()
+            self.optimizer["gen"].step()
+
             if self.lr_scheduler is not None:
-                self.lr_scheduler.step()
+                for part in self.lr_scheduler:
+                    self.lr_scheduler[part].step()
 
         # update metrics for each loss (in case of multiple losses)
         for loss_name in self.config.writer.loss_names:
             metrics.update(loss_name, batch[loss_name].item())
-
         for met in metric_funcs:
             metrics.update(met.name, met(**batch))
         return batch
@@ -67,13 +92,43 @@ class Trainer(BaseTrainer):
             mode (str): train or inference. Defines which logging
                 rules to apply.
         """
-        # method to log data from you batch
-        # such as audio, text or images, for example
-
-        # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
-            # Log Stuff
-            pass
+            self._log_spectrogram(**batch)
         else:
             # Log Stuff
-            pass
+            self._log_spectrogram(**batch)
+            self._log_preds(**batch)
+
+    def _log_spectrogram(self, mel_spect_data_object, mel_spec_pred, **batch):
+        spectrogram_for_plot = mel_spect_data_object[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("true_spectrogram", image)
+
+        spectrogram_for_plot = mel_spec_pred[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("pred_spectrogram", image)
+
+    def _log_preds(self, examples_to_log=5, **batch):
+        result = {}
+        examples_to_log = min(examples_to_log, batch["audio_pred"].shape[0])
+
+        tuples = list(
+            zip(batch["audio_pred"], batch["audio_data_object"], batch["text"])
+        )
+        shuffle(tuples)
+
+        for idx, (pred, target, text) in enumerate(tuples[:examples_to_log]):
+            result[idx] = {
+                "predict_audio": self.writer.wandb.Audio(
+                    pred.squeeze(0).detach().cpu().numpy(),
+                    sample_rate=MelSpectrogramConfig.sr,
+                ),
+                "target_audio": self.writer.wandb.Audio(
+                    target.squeeze(0).detach().cpu().numpy(),
+                    sample_rate=MelSpectrogramConfig.sr,
+                ),
+                "text": text,
+            }
+        self.writer.add_table(
+            "predictions", pd.DataFrame.from_dict(result, orient="index")
+        )

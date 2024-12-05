@@ -3,6 +3,7 @@ import random
 from typing import List
 
 import torch
+import torchaudio
 from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,13 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self, index, limit=None, shuffle_index=False, instance_transforms=None
+        self,
+        index,
+        target_sr=22050,
+        limit_from=None,
+        limit_to=None,
+        shuffle_index=False,
+        instance_transforms=None,
     ):
         """
         Args:
@@ -35,10 +42,13 @@ class BaseDataset(Dataset):
         """
         self._assert_index_is_valid(index)
 
-        index = self._shuffle_and_limit_index(index, limit, shuffle_index)
+        index = self._shuffle_and_limit_index(
+            index, limit_from, limit_to, shuffle_index
+        )
         self._index: List[dict] = index
 
         self.instance_transforms = instance_transforms
+        self.target_sr = target_sr
 
     def __getitem__(self, ind):
         """
@@ -80,8 +90,12 @@ class BaseDataset(Dataset):
         Returns:
             data_object (Tensor):
         """
-        data_object = torch.load(path)
-        return data_object
+        audio_tensor, sr = torchaudio.load(path)
+        audio_tensor = audio_tensor[0:1, :]  # remove all channels but the first
+        target_sr = self.target_sr
+        if sr != target_sr:
+            audio_tensor = torchaudio.functional.resample(audio_tensor, sr, target_sr)
+        return audio_tensor
 
     def preprocess_data(self, instance_data):
         """
@@ -139,12 +153,13 @@ class BaseDataset(Dataset):
                 such as label and object path.
         """
         for entry in index:
-            assert "path" in entry, (
-                "Each dataset item should include field 'path'" " - path to audio file."
+            assert "path_audio" in entry, (
+                "Each dataset item should include field 'path_audio'"
+                " - path to audio file."
             )
-            assert "label" in entry, (
-                "Each dataset item should include field 'label'"
-                " - object ground-truth label."
+            assert "id" in entry, (
+                "Each dataset item should include field 'id'"
+                " - object ground-truth id."
             )
 
     @staticmethod
@@ -167,7 +182,7 @@ class BaseDataset(Dataset):
         return sorted(index, key=lambda x: x["KEY_FOR_SORTING"])
 
     @staticmethod
-    def _shuffle_and_limit_index(index, limit, shuffle_index):
+    def _shuffle_and_limit_index(index, limit_from, limit_to, shuffle_index):
         """
         Shuffle elements in index and limit the total number of elements.
 
@@ -180,10 +195,12 @@ class BaseDataset(Dataset):
             shuffle_index (bool): if True, shuffle the index. Uses python
                 random package with seed 42.
         """
+        if limit_to is not None:
+            index = index[:limit_to]
+        if limit_from is not None:
+            index = index[limit_from:]
+
         if shuffle_index:
             random.seed(42)
             random.shuffle(index)
-
-        if limit is not None:
-            index = index[:limit]
         return index

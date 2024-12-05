@@ -1,0 +1,16 @@
+train:
+  _target_: src.datasets.СustomAudioDataset
+  dir: "data/LJSpeech-1.1"
+  audio_size: 8192
+  with_texts: False
+  with_audio: True
+  limit_to: -1000
+  instance_transforms: ${transforms.instance_transforms.train}
+val:
+  _target_: src.datasets.СustomAudioDataset
+  dir: "data/LJSpeech-1.1"
+  audio_size: 8192
+  with_texts: False
+  with_audio: True
+  limit_from: -1000
+  instance_transforms: ${transforms.instance_transforms.inference}

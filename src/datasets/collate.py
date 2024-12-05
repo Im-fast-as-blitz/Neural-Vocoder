@@ -1,4 +1,7 @@
 import torch
+from torch.nn.utils.rnn import pad_sequence
+
+from src.transforms.mel_spect import MelSpectrogramConfig
 
 
 def collate_fn(dataset_items: list[dict]):
@@ -16,10 +19,24 @@ def collate_fn(dataset_items: list[dict]):
 
     result_batch = {}
 
-    # example of collate_fn
-    result_batch["data_object"] = torch.vstack(
-        [elem["data_object"] for elem in dataset_items]
+    result_batch["audio_data_object"] = pad_sequence(
+        [item["audio_data_object"].squeeze(0) for item in dataset_items],
+        batch_first=True,
     )
-    result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
+
+    # for ind in range(len(dataset_items)):
+    #     print(ind, dataset_items[ind]["audio_data_object"].shape, dataset_items[ind]["mel_spect_data_object"].shape)
+
+    result_batch["mel_spect_data_object"] = pad_sequence(
+        [
+            item["mel_spect_data_object"].squeeze(0).permute(1, 0)
+            for item in dataset_items
+        ],
+        batch_first=True,
+        padding_value=MelSpectrogramConfig.pad_value,
+    ).permute(0, 2, 1)
+
+    result_batch["id"] = [item["id"] for item in dataset_items]
+    result_batch["text"] = [item["text"] for item in dataset_items]
 
     return result_batch
