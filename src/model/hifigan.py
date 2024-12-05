@@ -47,7 +47,9 @@ class HiFiGAN(nn.Module):
         result = {}
         if "audio_pred" not in batch and "mel_spec_pred" not in batch:
             audio_pred = self.gen(mel_spect_data_object)
-            mel_spec_pred = MelSpectrogram()(audio_pred.squeeze(1))
+            mel_spec_pred = MelSpectrogram().to(audio_pred.device)(
+                audio_pred.squeeze(1)
+            )
             result = {
                 "audio_pred": audio_pred,
                 "mel_spec_pred": mel_spec_pred,

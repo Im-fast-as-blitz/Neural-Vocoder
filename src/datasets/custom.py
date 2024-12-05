@@ -58,6 +58,8 @@ class СustomAudioDataset(BaseDataset):
             for root, _, files in os.walk(audio_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
+                    if file[-4:] != ".wav":
+                        continue
                     wav_id = file.replace(".wav", "")
                     paths = {
                         "id": wav_id,
