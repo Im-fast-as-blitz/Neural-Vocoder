@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 class СustomAudioDataset(BaseDataset):
     def __init__(
         self,
-        dir: Optional[str],
         audio_size: int = 8192,
         with_texts: bool = True,
         with_audio: bool = False,
+        dir: Optional[str] = None,
         *args,
         **kwargs,
     ):
