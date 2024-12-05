@@ -110,15 +110,6 @@ class Generator(nn.Module):
         )
 
     def forward(self, mel_spect, **batch):
-        # print("before", mel_spect.shape)
-        # frames_per_seg = math.ceil(8192 / 256)
-        # if mel_spect.size(2) >= frames_per_seg:
-        #     mel_start = random.randint(0, mel_spect.size(2) - frames_per_seg - 1)
-        #     mel_spect = mel_spect[:, :, mel_start:mel_start + frames_per_seg]
-        # else:
-        #     mel_spect = nn.functional.pad(mel_spect, (0, frames_per_seg - mel_spect.size(2)), 'constant')
-        # print("after", mel_spect.shape)
-
         mel_spect = self.init_lay(mel_spect)
         result = self.generator(mel_spect)
         result = self.end(result)
