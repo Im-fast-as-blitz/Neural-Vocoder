@@ -528,8 +528,10 @@ class BaseTrainer:
                 "are not resumed."
             )
         else:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
-            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            self.optimizer["gen"].load_state_dict(checkpoint["optimizer"][0])
+            self.optimizer["disc"].load_state_dict(checkpoint["optimizer"][1])
+            self.lr_scheduler["gen"].load_state_dict(checkpoint["lr_scheduler"][0])
+            self.lr_scheduler["disc"].load_state_dict(checkpoint["lr_scheduler"][1])
 
         self.logger.info(
             f"Checkpoint loaded. Resume training from epoch {self.start_epoch}"

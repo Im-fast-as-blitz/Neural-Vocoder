@@ -158,5 +158,4 @@ def setup_saving_and_logging(config):
         setup_logging(save_dir, append=False)
     logger = logging.getLogger("train")
     logger.setLevel(logging.DEBUG)
-
     return logger
