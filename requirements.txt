@@ -17,3 +17,4 @@ librosa
 
 transformers
 speechbrain
+gdown

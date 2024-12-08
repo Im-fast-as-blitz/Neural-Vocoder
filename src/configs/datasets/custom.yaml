@@ -1,6 +1,7 @@
 train:
   _target_: src.datasets.СustomAudioDataset
   audio_size: 8192
+  dir: "data/LJSpeech-1.1"
   with_texts: False
   with_audio: True
   limit_to: -1000
@@ -8,6 +9,7 @@ train:
 val:
   _target_: src.datasets.СustomAudioDataset
   audio_size: 8192
+  dir: "data/LJSpeech-1.1"
   with_texts: False
   with_audio: True
   limit_from: -1000
