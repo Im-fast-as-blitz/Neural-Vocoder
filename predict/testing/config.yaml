@@ -1,0 +1,99 @@
+model:
+  _target_: src.model.HiFiGAN
+  in_chanels: 80
+  Hu: 512
+  Ku:
+  - 16
+  - 16
+  - 4
+  - 4
+  Kr:
+  - 3
+  - 7
+  - 11
+  Dr:
+  - - - 1
+      - 1
+    - - 3
+      - 1
+    - - 5
+      - 1
+  - - - 1
+      - 1
+    - - 3
+      - 1
+    - - 5
+      - 1
+  - - - 1
+      - 1
+    - - 3
+      - 1
+    - - 5
+      - 1
+writer:
+  _target_: src.logger.WandBWriter
+  project_name: neural_vocoder
+  entity: null
+  run_name: testing
+  mode: online
+  loss_names:
+  - gan_gen_loss_mpd
+  - gan_gen_loss_msd
+  - mel_spect_loss
+  - fm_loss_mpd
+  - fm_loss_msd
+  - loss_gener
+  - gan_disc_loss_mpd
+  - gan_disc_loss_msd
+  - loss_disc
+  log_checkpoints: false
+  id_length: 8
+  run_id: 3lcwk8gm
+metrics:
+  device: auto
+  train:
+  - _target_: src.metrics.WVMOS
+    device: ${metrics.device}
+    name: WVMOS
+  inference:
+  - _target_: src.metrics.WVMOS
+    device: ${metrics.device}
+    name: WVMOS
+datasets:
+  test:
+    _target_: src.datasets.СustomAudioDataset
+    audio_size: -1
+    dir: data/test
+    with_texts: true
+    with_audio: true
+    instance_transforms: ${transforms.instance_transforms.inference}
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 1
+  num_workers: 1
+  pin_memory: true
+transforms:
+  instance_transforms:
+    train:
+      mel_spect_data_object:
+        _target_: torchvision.transforms.v2.Compose
+        transforms:
+        - _target_: src.transforms.MelSpectrogram
+    inference:
+      mel_spect_data_object:
+        _target_: torchvision.transforms.v2.Compose
+        transforms:
+        - _target_: src.transforms.MelSpectrogram
+  batch_transforms:
+    train: null
+    inference: null
+inferencer:
+  device_tensors:
+  - audio_data_object
+  - mel_spect_data_object
+  device: auto
+  save_path: predict
+  override: true
+  seed: 1
+  from_pretrained: saved/model_best.pth
+dir: /Users/rchernomordin/hse/dla/hw3/pytorch_project_template/data/test

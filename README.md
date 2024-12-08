@@ -84,6 +84,8 @@ For predicts by melspec from audio:
 python3 synthesize.py -cn=inference +dir=PATH_TO_TRAIN_DATA
 ```
 
+**IMPORTANT** if you want to run another dataset, you should delete index.json file in your dataset's dir
+
 For predicts by melspec from text:
 
 ```bash
@@ -96,7 +98,7 @@ And all output audios will be saved in dir data/saved/predict
 
 [`WANDB`](https://drive.google.com/file/d/1LoU_kCzl20hM5p709teRPB0a4Jib8VK-/view?usp=sharing)
 
-[`Final model`](https://drive.google.com/file/d/1LoU_kCzl20hM5p709teRPB0a4Jib8VK-/view?usp=sharing)
+[`Final model`](https://drive.google.com/file/d/1BH3Wb9mQhT0mRK1iV1tA3gP5hQMUQRFs/view?usp=drive_link)
 
 ## Credits
 
