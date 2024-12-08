@@ -37,6 +37,7 @@ def collate_fn(dataset_items: list[dict]):
     ).permute(0, 2, 1)
 
     result_batch["id"] = [item["id"] for item in dataset_items]
-    result_batch["text"] = [item["text"] for item in dataset_items]
+    if "text" in dataset_items[0]:
+        result_batch["text"] = [item["text"] for item in dataset_items]
 
     return result_batch

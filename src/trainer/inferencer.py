@@ -1,8 +1,10 @@
 import torch
+import torchaudio
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
+from src.transforms.mel_spect import MelSpectrogramConfig
 
 
 class Inferencer(BaseTrainer):
@@ -119,36 +121,29 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        outputs = self.model(is_gen=True, is_train=False, **batch)
         batch.update(outputs)
 
         if metrics is not None:
             for met in self.metrics["inference"]:
                 metrics.update(met.name, met(**batch))
 
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
-
-        batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
-
-        for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
-
-            output_id = current_id + i
-
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+        if self.save_path is not None:
+            # you can use safetensors or other lib here
+            if (
+                len(batch["audio_pred"].shape) == 3
+                and batch["audio_pred"].shape[0] == 1
+            ):
+                batch["audio_pred"] = batch["audio_pred"].squeeze(0)
+            batch_id = batch["id"][0]
+            out_path = self.save_path / f"{batch_id}.wav"
+            torchaudio.save(
+                uri=out_path,
+                src=batch["audio_pred"],
+                sample_rate=MelSpectrogramConfig.sr,
+                format="wav",
+            )
+            # torch.save(output, self.save_path / part / f"output_{output_id}.pth")
 
         return batch
 

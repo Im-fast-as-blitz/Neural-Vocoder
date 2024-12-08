@@ -109,15 +109,18 @@ class СustomAudioDataset(BaseDataset):
             raise Exception("At this moment out class can not work with text only")
 
         audio_data_object = self.load_object(data_dict["path_audio"])
-        if audio_data_object.shape[1] >= self._audio_size:
-            start = random.randint(0, audio_data_object.shape[1] - self._audio_size)
-            audio_data_object = audio_data_object[:, start : start + self._audio_size]
-        else:
-            audio_data_object = F.pad(
-                audio_data_object,
-                (0, self._audio_size - audio_data_object.shape[1]),
-                "constant",
-            )
+        if self._audio_size != -1:
+            if audio_data_object.shape[1] >= self._audio_size:
+                start = random.randint(0, audio_data_object.shape[1] - self._audio_size)
+                audio_data_object = audio_data_object[
+                    :, start : start + self._audio_size
+                ]
+            else:
+                audio_data_object = F.pad(
+                    audio_data_object,
+                    (0, self._audio_size - audio_data_object.shape[1]),
+                    "constant",
+                )
 
         instance_data = {
             "audio_data_object": audio_data_object,
@@ -127,6 +130,7 @@ class СustomAudioDataset(BaseDataset):
 
         instance_data["id"] = data_dict["id"]
 
-        instance_data["text"] = data_dict["text"]
+        if "text" in data_dict:
+            instance_data["text"] = data_dict["text"]
 
         return instance_data

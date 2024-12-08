@@ -22,6 +22,9 @@ def main(config):
     Args:
         config (DictConfig): hydra experiment config.
     """
+    if "path" in config:
+        config["datasets"]["test"].update({"path": config.path})
+
     set_random_seed(config.inferencer.seed)
 
     if config.inferencer.device == "auto":
@@ -60,7 +63,7 @@ def main(config):
     for part in logs.keys():
         for key, value in logs[part].items():
             full_key = part + "_" + key
-            print(f"    {full_key:15s}: {value}")
+            print(f"    {full_key:15s}: {value}")  # noqa: E231
 
 
 if __name__ == "__main__":

@@ -33,7 +33,9 @@ class HiFiGAN(nn.Module):
         self.gen = Generator(in_chanels, Hu, Ku, Kr, Dr)
         print("Init Generator")
 
-    def forward(self, is_gen, audio_data_object, mel_spect_data_object, **batch):
+    def forward(
+        self, is_gen, audio_data_object, mel_spect_data_object, is_train=True, **batch
+    ):
         """
         Model forward method.
 
@@ -54,6 +56,8 @@ class HiFiGAN(nn.Module):
                 "audio_pred": audio_pred,
                 "mel_spec_pred": mel_spec_pred,
             }
+            if not is_train:
+                return result
 
         if is_gen:
             # for generator

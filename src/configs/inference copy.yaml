@@ -1,8 +1,8 @@
 defaults:
   - model: hifigan_v1
   - metrics: hifigan
-  - datasets: custom_inf # we do not want to run inference on training data
-  - dataloader: inference
+  - datasets: custom # we do not want to run inference on training data
+  - dataloader: example
   - transforms: example_only_instance
   - _self_
 inferencer:
