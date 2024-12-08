@@ -1,8 +1,8 @@
 defaults:
   - model: hifigan_v1
   - metrics: hifigan
-  - datasets: custom # we do not want to run inference on training data
-  - dataloader: example
+  - datasets: custom_inf_from_text # we do not want to run inference on training data
+  - dataloader: inference
   - transforms: example_only_instance
   - _self_
 inferencer:
@@ -10,4 +10,4 @@ inferencer:
   device: auto # device name or "auto"
   save_path: "predict" # any name here, can be a dataset name
   seed: 1
-  from_pretrained: "saved/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/checkpoint-epoch135.pth" # path to the pretrained model

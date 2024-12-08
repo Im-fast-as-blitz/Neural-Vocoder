@@ -1,7 +1,7 @@
 test:
   _target_: src.datasets.СustomAudioDataset
   audio_size: -1
-  dir: /Users/rchernomordin/hse/dla/hw3/pytorch_project_template/data/test
+  dir: data/test
   with_texts: False
   with_audio: True
   instance_transforms: ${transforms.instance_transforms.inference}
